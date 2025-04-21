@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+// Initialize Prisma client
 const prisma = new PrismaClient();
 
 export const authOptions: AuthOptions = {
@@ -18,30 +19,35 @@ export const authOptions: AuthOptions = {
           throw new Error('Please enter an email and password');
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
-        if (!user) {
-          throw new Error('No user found with this email');
+          if (!user) {
+            throw new Error('No user found with this email');
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            throw new Error('Invalid password');
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          console.error('Authentication error:', error);
+          return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid password');
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
       },
     }),
   ],
@@ -49,7 +55,7 @@ export const authOptions: AuthOptions = {
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/auth/signin',
+    signIn: '/auth/login',
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -65,4 +71,5 @@ export const authOptions: AuthOptions = {
       return session;
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 }; 
