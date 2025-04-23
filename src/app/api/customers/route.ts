@@ -15,7 +15,12 @@ export async function GET() {
 
     const customers = await prisma.customer.findMany({
       include: {
-        branch: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         assignedUser: {
           select: {
             id: true,
@@ -23,6 +28,9 @@ export async function GET() {
             email: true,
           },
         },
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
 
@@ -47,7 +55,7 @@ export async function POST(request: Request) {
     const data = await request.json();
     
     // Validate required fields
-    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'country', 'branchId'];
+    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'country', 'branchId', 'assignedTo'];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -60,11 +68,23 @@ export async function POST(request: Request) {
     // Create customer
     const customer = await prisma.customer.create({
       data: {
-        ...data,
-        assignedTo: session.user.id, // Assign to the current user
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        branchId: data.branchId,
+        assignedTo: data.assignedTo,
       },
       include: {
-        branch: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         assignedUser: {
           select: {
             id: true,

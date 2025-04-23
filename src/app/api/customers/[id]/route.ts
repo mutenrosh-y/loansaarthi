@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, LoanStatus } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
 
 const prisma = new PrismaClient();
 
-// GET /api/customers/[id] - Get a single customer
+// GET /api/customers/[id] - Get a specific customer
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -17,14 +17,34 @@ export async function GET(
     }
 
     const customer = await prisma.customer.findUnique({
-      where: { id: params.id },
+      where: {
+        id: params.id,
+      },
       include: {
-        branch: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         assignedUser: {
           select: {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        loans: {
+          select: {
+            id: true,
+            amount: true,
+            interestRate: true,
+            tenure: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
       },
@@ -59,9 +79,9 @@ export async function PUT(
     }
 
     const data = await request.json();
-    
+
     // Validate required fields
-    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'country', 'branchId'];
+    const requiredFields = ['name', 'email', 'phone', 'address', 'city', 'state', 'country', 'branchId', 'assignedTo'];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -72,10 +92,27 @@ export async function PUT(
     }
 
     const customer = await prisma.customer.update({
-      where: { id: params.id },
-      data,
+      where: {
+        id: params.id,
+      },
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        branchId: data.branchId,
+        assignedTo: data.assignedTo,
+      },
       include: {
-        branch: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         assignedUser: {
           select: {
             id: true,
@@ -113,27 +150,45 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if customer exists
-    const customer = await prisma.customer.findUnique({
-      where: { id: params.id },
+    // Check if customer has any active loans
+    const customerWithLoans = await prisma.customer.findUnique({
+      where: {
+        id: params.id,
+      },
+      include: {
+        _count: {
+          select: {
+            loans: {
+              where: {
+                status: LoanStatus.DISBURSED,
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!customer) {
+    if (!customerWithLoans) {
       return NextResponse.json(
         { error: 'Customer not found' },
         { status: 404 }
       );
     }
 
-    // Delete customer
+    if (customerWithLoans._count.loans > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete customer with active loans' },
+        { status: 400 }
+      );
+    }
+
     await prisma.customer.delete({
-      where: { id: params.id },
+      where: {
+        id: params.id,
+      },
     });
 
-    return NextResponse.json(
-      { message: 'Customer deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting customer:', error);
     return NextResponse.json(

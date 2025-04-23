@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { 
   PlusIcon, 
@@ -35,14 +36,18 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [branches, setBranches] = useState<{ id: string; name: string; }[]>([]);
   
   useEffect(() => {
     fetchCustomers();
+    fetchBranches();
   }, []);
 
   const fetchCustomers = async () => {
@@ -60,6 +65,19 @@ export default function CustomersPage() {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const response = await fetch('/api/branches');
+      if (!response.ok) {
+        throw new Error('Failed to fetch branches');
+      }
+      const data = await response.json();
+      setBranches(data);
+    } catch (error: any) {
+      console.error('Error fetching branches:', error);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this customer?')) {
       return;
@@ -74,8 +92,7 @@ export default function CustomersPage() {
         throw new Error('Failed to delete customer');
       }
 
-      // Refresh the customers list
-      fetchCustomers();
+      setCustomers(customers.filter(customer => customer.id !== id));
     } catch (error: any) {
       setError(error.message);
     }
@@ -90,7 +107,9 @@ export default function CustomersPage() {
                          (statusFilter === 'active' && customer.kycStatus) ||
                          (statusFilter === 'inactive' && !customer.kycStatus);
     
-    return matchesSearch && matchesStatus;
+    const matchesBranch = !selectedBranch || customer.branch.id === selectedBranch;
+    
+    return matchesSearch && matchesStatus && matchesBranch;
   });
 
   if (isLoading) {

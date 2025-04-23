@@ -16,7 +16,27 @@ interface User {
   email: string;
 }
 
-export default function AddCustomerPage() {
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  branch: {
+    id: string;
+    name: string;
+  };
+  assignedUser: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export default function EditCustomerPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -35,9 +55,35 @@ export default function AddCustomerPage() {
   });
 
   useEffect(() => {
+    fetchCustomerDetails();
     fetchBranches();
     fetchUsers();
-  }, []);
+  }, [params.id]);
+
+  const fetchCustomerDetails = async () => {
+    try {
+      const response = await fetch(`/api/customers/${params.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch customer details');
+      }
+      const data: Customer = await response.json();
+      setFormData({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        country: data.country,
+        branchId: data.branch.id,
+        assignedTo: data.assignedUser.id,
+      });
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchBranches = async () => {
     try {
@@ -62,8 +108,6 @@ export default function AddCustomerPage() {
       setUsers(data);
     } catch (error: any) {
       setError(error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -72,8 +116,8 @@ export default function AddCustomerPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/customers', {
-        method: 'POST',
+      const response = await fetch(`/api/customers/${params.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -82,10 +126,10 @@ export default function AddCustomerPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to create customer');
+        throw new Error(data.error || 'Failed to update customer');
       }
 
-      router.push('/customers');
+      router.push(`/customers/${params.id}`);
     } catch (error: any) {
       setError(error.message);
     }
@@ -121,14 +165,14 @@ export default function AddCustomerPage() {
               className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
             >
               <ArrowLeftIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
-              Back to Customers
+              Back to Customer Details
             </button>
           </div>
 
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg font-medium leading-6 text-gray-900">
-                Add New Customer
+                Edit Customer
               </h3>
             </div>
 
@@ -295,7 +339,7 @@ export default function AddCustomerPage() {
                   type="submit"
                   className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
-                  Create Customer
+                  Update Customer
                 </button>
               </div>
             </form>
