@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "NEXTAUTH_URL": "https://loansaarthi.vercel.app",
+    "PRISMA_GENERATE": "true"
+  },
+  "build": {
+    "env": {
+      "PRISMA_GENERATE": "true"
+    }
+  }
+} 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { 
   PlusIcon, 
@@ -17,71 +17,93 @@ interface Customer {
   email: string;
   phone: string;
   address: string;
-  status: 'active' | 'inactive' | 'pending';
+  city: string;
+  state: string;
+  country: string;
+  kycStatus: boolean;
+  branch: {
+    id: string;
+    name: string;
+  };
+  assignedUser: {
+    id: string;
+    name: string;
+    email: string;
+  };
   createdAt: string;
+  updatedAt: string;
 }
 
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+91 9876543210',
-    address: '123 Main St, Mumbai, India',
-    status: 'active',
-    createdAt: '2023-01-15',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '+91 9876543211',
-    address: '456 Park Ave, Delhi, India',
-    status: 'active',
-    createdAt: '2023-02-20',
-  },
-  {
-    id: '3',
-    name: 'Amit Patel',
-    email: 'amit.patel@example.com',
-    phone: '+91 9876543212',
-    address: '789 Circle Rd, Bangalore, India',
-    status: 'pending',
-    createdAt: '2023-03-10',
-  },
-  {
-    id: '4',
-    name: 'Priya Singh',
-    email: 'priya.singh@example.com',
-    phone: '+91 9876543213',
-    address: '234 Square Blvd, Chennai, India',
-    status: 'inactive',
-    createdAt: '2023-01-05',
-  },
-  {
-    id: '5',
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@example.com',
-    phone: '+91 9876543214',
-    address: '567 Triangle St, Hyderabad, India',
-    status: 'active',
-    createdAt: '2023-04-25',
-  },
-];
-
 export default function CustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   
-  const filteredCustomers = MOCK_CUSTOMERS.filter(customer => {
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await fetch('/api/customers');
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      const data = await response.json();
+      setCustomers(data);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this customer?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/customers/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete customer');
+      }
+
+      // Refresh the customers list
+      fetchCustomers();
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+  
+  const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm);
     
-    const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && customer.kycStatus) ||
+                         (statusFilter === 'inactive' && !customer.kycStatus);
     
     return matchesSearch && matchesStatus;
   });
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+            <div className="text-center">Loading...</div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -94,6 +116,12 @@ export default function CustomersPage() {
               Add Customer
             </Link>
           </div>
+          
+          {error && (
+            <div className="mt-4 rounded-md bg-red-50 p-4">
+              <div className="text-sm text-red-700">{error}</div>
+            </div>
+          )}
           
           <div className="mt-6 bg-white shadow rounded-lg overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
@@ -119,7 +147,6 @@ export default function CustomersPage() {
                   <option value="all">All Statuses</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
-                  <option value="pending">Pending</option>
                 </select>
               </div>
             </div>
@@ -141,7 +168,7 @@ export default function CustomersPage() {
                       Status
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Since
+                      Branch
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -160,19 +187,17 @@ export default function CustomersPage() {
                           <div className="text-gray-500">{customer.phone}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {customer.address}
+                          {`${customer.address}, ${customer.city}, ${customer.state}, ${customer.country}`}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            customer.status === 'active' ? 'bg-green-100 text-green-800' : 
-                            customer.status === 'inactive' ? 'bg-red-100 text-red-800' : 
-                            'bg-yellow-100 text-yellow-800'
+                            customer.kycStatus ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
-                            {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                            {customer.kycStatus ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {customer.createdAt}
+                          {customer.branch.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
@@ -182,7 +207,10 @@ export default function CustomersPage() {
                             <Link href={`/customers/${customer.id}/edit`} className="text-indigo-600 hover:text-indigo-900">
                               <PencilIcon className="h-5 w-5" aria-hidden="true" />
                             </Link>
-                            <button className="text-red-600 hover:text-red-900">
+                            <button 
+                              onClick={() => handleDelete(customer.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
                               <TrashIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
                           </div>
@@ -205,7 +233,7 @@ export default function CustomersPage() {
                 <div>
                   <p className="text-sm text-gray-700">
                     Showing <span className="font-medium">{filteredCustomers.length}</span> of{' '}
-                    <span className="font-medium">{MOCK_CUSTOMERS.length}</span> customers
+                    <span className="font-medium">{customers.length}</span> customers
                   </p>
                 </div>
               </div>
