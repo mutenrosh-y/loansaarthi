@@ -19,7 +19,7 @@ interface Loan {
   customerId: string;
   amount: number;
   interestRate: number;
-  term: number;
+  tenure: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'CLOSED';
   type: 'PERSONAL' | 'BUSINESS' | 'HOME' | 'EDUCATION' | 'VEHICLE';
   purpose: string;
@@ -192,9 +192,9 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
                 </div>
 
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Term</dt>
+                  <dt className="text-sm font-medium text-gray-500">Tenure</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {loan.term} months
+                    {loan.tenure} months
                   </dd>
                 </div>
 

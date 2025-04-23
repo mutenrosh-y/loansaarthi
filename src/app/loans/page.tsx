@@ -16,7 +16,7 @@ interface Loan {
   customerId: string;
   amount: number;
   interestRate: number;
-  term: number;
+  tenure: number;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'CLOSED';
   type: 'PERSONAL' | 'BUSINESS' | 'HOME' | 'EDUCATION' | 'VEHICLE';
   purpose: string;

@@ -25,7 +25,7 @@ export default function AddLoanPage() {
   const [formData, setFormData] = useState({
     customerId: '',
     branchId: '',
-    loanType: '',
+    type: '',
     amount: '',
     interestRate: '',
     tenure: '',
@@ -181,14 +181,14 @@ export default function AddLoanPage() {
               </div>
 
               <div>
-                <label htmlFor="loanType" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                   Loan Type
                 </label>
                 <select
-                  id="loanType"
-                  name="loanType"
+                  id="type"
+                  name="type"
                   required
-                  value={formData.loanType}
+                  value={formData.type}
                   onChange={handleChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >

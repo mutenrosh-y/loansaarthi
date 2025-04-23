@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const data = await request.json();
     
     // Validate required fields
-    const requiredFields = ['customerId', 'amount', 'interestRate', 'term', 'type', 'purpose'];
+    const requiredFields = ['customerId', 'amount', 'interestRate', 'tenure', 'type', 'purpose'];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -59,10 +59,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // Calculate EMI and total amount
+    const principal = parseFloat(data.amount);
+    const rate = parseFloat(data.interestRate) / 100 / 12; // Monthly interest rate
+    const time = parseInt(data.tenure);
+    const emiAmount = (principal * rate * Math.pow(1 + rate, time)) / (Math.pow(1 + rate, time) - 1);
+    const totalAmount = emiAmount * time;
+
     // Create loan
     const loan = await prisma.loan.create({
       data: {
         ...data,
+        emiAmount,
+        totalAmount,
         status: 'PENDING',
       },
       include: {
