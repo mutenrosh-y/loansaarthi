@@ -11,20 +11,14 @@ interface Customer {
   email: string;
 }
 
-interface Branch {
-  id: string;
-  name: string;
-}
-
 export default function AddLoanPage() {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     customerId: '',
-    branchId: '',
     type: '',
     amount: '',
     interestRate: '',
@@ -34,7 +28,6 @@ export default function AddLoanPage() {
 
   useEffect(() => {
     fetchCustomers();
-    fetchBranches();
   }, []);
 
   const fetchCustomers = async () => {
@@ -47,19 +40,6 @@ export default function AddLoanPage() {
       setCustomers(data);
     } catch (error: any) {
       setError(error.message);
-    }
-  };
-
-  const fetchBranches = async () => {
-    try {
-      const response = await fetch('/api/branches');
-      if (!response.ok) {
-        throw new Error('Failed to fetch branches');
-      }
-      const data = await response.json();
-      setBranches(data);
-    } catch (error: any) {
-      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -68,24 +48,36 @@ export default function AddLoanPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     try {
+      // Convert string values to appropriate types
+      const loanData = {
+        ...formData,
+        amount: parseFloat(formData.amount),
+        interestRate: parseFloat(formData.interestRate),
+        tenure: parseInt(formData.tenure),
+      };
+
       const response = await fetch('/api/loans', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(loanData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to create loan');
       }
 
       router.push('/loans');
     } catch (error: any) {
       setError(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,27 +146,6 @@ export default function AddLoanPage() {
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.name} ({customer.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="branchId" className="block text-sm font-medium text-gray-700">
-                  Branch
-                </label>
-                <select
-                  id="branchId"
-                  name="branchId"
-                  required
-                  value={formData.branchId}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                >
-                  <option value="">Select a branch</option>
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.name}
                     </option>
                   ))}
                 </select>
@@ -272,9 +243,10 @@ export default function AddLoanPage() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                disabled={isSubmitting}
+                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
-                Create Loan
+                {isSubmitting ? 'Creating...' : 'Create Loan'}
               </button>
             </div>
           </form>
