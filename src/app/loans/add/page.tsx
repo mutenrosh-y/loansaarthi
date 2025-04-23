@@ -51,6 +51,31 @@ export default function AddLoanPage() {
     setIsSubmitting(true);
 
     try {
+      // Validate form data
+      if (!formData.customerId) {
+        throw new Error('Please select a customer');
+      }
+      
+      if (!formData.type) {
+        throw new Error('Please select a loan type');
+      }
+      
+      if (!formData.amount || parseFloat(formData.amount) <= 0) {
+        throw new Error('Please enter a valid amount');
+      }
+      
+      if (!formData.interestRate || parseFloat(formData.interestRate) <= 0) {
+        throw new Error('Please enter a valid interest rate');
+      }
+      
+      if (!formData.tenure || parseInt(formData.tenure) <= 0) {
+        throw new Error('Please enter a valid tenure');
+      }
+      
+      if (!formData.purpose) {
+        throw new Error('Please enter a loan purpose');
+      }
+
       // Convert string values to appropriate types
       const loanData = {
         ...formData,
@@ -58,6 +83,8 @@ export default function AddLoanPage() {
         interestRate: parseFloat(formData.interestRate),
         tenure: parseInt(formData.tenure),
       };
+
+      console.log('Submitting loan data:', loanData);
 
       const response = await fetch('/api/loans', {
         method: 'POST',
@@ -68,6 +95,7 @@ export default function AddLoanPage() {
       });
 
       const data = await response.json();
+      console.log('API response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create loan');
@@ -75,6 +103,7 @@ export default function AddLoanPage() {
 
       router.push('/loans');
     } catch (error: any) {
+      console.error('Error creating loan:', error);
       setError(error.message);
     } finally {
       setIsSubmitting(false);
