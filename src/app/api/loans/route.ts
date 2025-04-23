@@ -73,6 +73,7 @@ export async function POST(request: Request) {
         emiAmount,
         totalAmount,
         status: 'PENDING',
+        createdBy: session.user.id,
       },
       include: {
         customer: {
