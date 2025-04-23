@@ -59,6 +59,7 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [comments, setComments] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetchLoanDetails();
@@ -80,22 +81,23 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this loan?')) {
-      return;
-    }
-
     try {
+      setIsSubmitting(true);
       const response = await fetch(`/api/loans/${params.id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete loan');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete loan');
       }
 
       router.push('/loans');
     } catch (error: any) {
       setError(error.message);
+    } finally {
+      setIsSubmitting(false);
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -186,22 +188,44 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
               <h1 className="text-2xl font-semibold text-gray-900">Loan Details</h1>
             </div>
 
-            {loan.status === 'PENDING' && (
-              <div className="flex space-x-4">
+            <div className="flex space-x-4">
+              {loan.status === 'PENDING' && (
+                <>
+                  <button
+                    onClick={() => setIsApprovalModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => setIsRejectionModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Reject
+                  </button>
+                </>
+              )}
+              
+              {loan.status === 'PENDING' && (
                 <button
-                  onClick={() => setIsApprovalModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  onClick={() => router.push(`/loans/${loan.id}/edit`)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  Approve
+                  <PencilIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
+                  Edit
                 </button>
+              )}
+              
+              {loan.status === 'PENDING' && (
                 <button
-                  onClick={() => setIsRejectionModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
-                  Reject
+                  <TrashIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
+                  Delete
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {error && (
@@ -411,6 +435,49 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Rejecting...' : 'Reject'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Delete Modal */}
+      <Transition appear show={isDeleteModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-10 overflow-y-auto"
+          onClose={() => setIsDeleteModalOpen(false)}
+        >
+          <div className="min-h-screen px-4 text-center">
+            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+              <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                Delete Loan
+              </Dialog.Title>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete this loan? This action cannot be undone.
+                </p>
+              </div>
+              <div className="mt-4 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

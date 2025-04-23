@@ -102,6 +102,10 @@ model Loan {
   createdByUser   User        @relation(fields: [createdBy], references: [id])
   approvedBy      String?
   approvedByUser  User?       @relation("LoanApproval", fields: [approvedBy], references: [id])
+  approvalDate    DateTime?
+  approvalComments String?
+  rejectionReason String?
+  rejectionDate   DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }
