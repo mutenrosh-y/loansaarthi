@@ -46,7 +46,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (!session.user || !session.user.id) {
+      console.error('Session user or user ID is missing:', session);
+      return NextResponse.json({ error: 'User ID not found in session' }, { status: 500 });
+    }
+
     const data = await request.json();
+    console.log('Received loan data:', data);
     
     // Validate required fields
     const requiredFields = ['customerId', 'amount', 'interestRate', 'tenure', 'type', 'purpose'];
@@ -65,6 +71,14 @@ export async function POST(request: Request) {
     const time = parseInt(data.tenure);
     const emiAmount = (principal * rate * Math.pow(1 + rate, time)) / (Math.pow(1 + rate, time) - 1);
     const totalAmount = emiAmount * time;
+
+    console.log('Creating loan with data:', {
+      ...data,
+      emiAmount,
+      totalAmount,
+      status: 'PENDING',
+      createdBy: session.user.id,
+    });
 
     // Create loan
     const loan = await prisma.loan.create({
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json(
-      { error: 'Failed to create loan' },
+      { error: `Failed to create loan: ${error.message}` },
       { status: 500 }
     );
   }

@@ -87,9 +87,11 @@ model Loan {
   id              String      @id @default(cuid())
   customerId      String
   customer        Customer    @relation(fields: [customerId], references: [id])
+  type            String      // PERSONAL, HOME, BUSINESS, EDUCATION, VEHICLE
   amount          Float
   interestRate    Float
   tenure          Int         // in months
+  purpose         String
   status          LoanStatus  @default(PENDING)
   emiAmount       Float
   totalAmount     Float
