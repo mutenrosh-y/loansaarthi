@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { getSignedUrl } from '@/lib/cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(
   request: Request,
@@ -39,12 +46,11 @@ export async function POST(
       url: document.url,
     });
 
-    // Get file format from URL
-    const format = document.url.split('.').pop() || 'pdf';
-
     try {
-      // Extract public_id from Cloudinary URL
-      // URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.pdf
+      // Generate a signed URL that expires in 1 hour
+      const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+      
+      // Extract the public_id from the URL
       const urlParts = document.url.split('/');
       const uploadIndex = urlParts.findIndex(part => part === 'upload');
       if (uploadIndex === -1) {
@@ -55,15 +61,24 @@ export async function POST(
       const pathAfterUpload = urlParts.slice(uploadIndex + 1).join('/');
       const publicId = pathAfterUpload.split('.')[0]; // Remove file extension
       
-      console.log('Extracted public_id:', publicId);
-      
-      // Return the original URL since it's public
-      return NextResponse.json({ url: document.url });
+      console.log('Generating signed URL for:', {
+        publicId,
+        expiresAt,
+      });
+
+      // Generate a signed URL using Cloudinary's SDK
+      const signedUrl = cloudinary.utils.private_download_url(
+        publicId,
+        'pdf',
+        { expires_at: expiresAt }
+      );
+
+      console.log('Generated signed URL');
+      return NextResponse.json({ url: signedUrl });
     } catch (error) {
       console.error('Error generating signed URL:', {
         documentId: document.id,
         url: document.url,
-        format,
         error,
       });
       
