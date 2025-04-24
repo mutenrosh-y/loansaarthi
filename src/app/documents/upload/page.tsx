@@ -16,6 +16,8 @@ interface Loan {
   id: string;
   customerId: string;
   status: string;
+  type: string;
+  amount: number;
 }
 
 export default function DocumentUploadPage() {
@@ -27,7 +29,9 @@ export default function DocumentUploadPage() {
   const [selectedLoan, setSelectedLoan] = useState<string>('');
   const [documentType, setDocumentType] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [loadingLoans, setLoadingLoans] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loanError, setLoanError] = useState<string | null>(null);
 
   // Fetch customers when component mounts
   useEffect(() => {
@@ -58,15 +62,23 @@ export default function DocumentUploadPage() {
   };
 
   const fetchLoans = async (customerId: string) => {
+    setLoadingLoans(true);
+    setLoanError(null);
+    setLoans([]);
+    setSelectedLoan('');
+    
     try {
       const response = await fetch(`/api/customers/${customerId}/loans`);
       if (!response.ok) {
-        throw new Error('Failed to fetch loans');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch loans');
       }
       const data = await response.json();
       setLoans(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch loans');
+      setLoanError(err instanceof Error ? err.message : 'Failed to fetch loans');
+    } finally {
+      setLoadingLoans(false);
     }
   };
 
@@ -172,15 +184,26 @@ export default function DocumentUploadPage() {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     value={selectedLoan}
                     onChange={(e) => setSelectedLoan(e.target.value)}
-                    disabled={!selectedCustomer || loans.length === 0}
+                    disabled={!selectedCustomer || loadingLoans}
                   >
-                    <option value="">Select Loan</option>
+                    <option value="">
+                      {loadingLoans 
+                        ? 'Loading loans...' 
+                        : loans.length === 0 
+                          ? 'No loans found' 
+                          : 'Select Loan'}
+                    </option>
                     {loans.map((loan) => (
                       <option key={loan.id} value={loan.id}>
-                        Loan ID: {loan.id}
+                        {loan.type} Loan - ₹{loan.amount.toLocaleString()} ({loan.status})
                       </option>
                     ))}
                   </select>
+                  {loanError && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {loanError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="sm:col-span-3">
