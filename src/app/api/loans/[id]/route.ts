@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/auth.config';
+import { calculateEMI } from "@/lib/loan";
 
 const prisma = new PrismaClient();
 
@@ -28,6 +29,7 @@ export async function GET(
             address: true,
           },
         },
+        documents: true,
       },
     });
 
@@ -50,58 +52,65 @@ export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  console.log("PUT /api/loans/[id] - Start processing loan update");
+  
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    console.error("Unauthorized access attempt - no valid session");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const data = await request.json();
+  try {
+    const loanData = await request.json();
+    console.log("Received loan update data:", loanData);
 
     // Validate required fields
-    const requiredFields = ['amount', 'interestRate', 'tenure', 'type', 'purpose'];
-    for (const field of requiredFields) {
-      if (!data[field]) {
-        return NextResponse.json(
-          { error: `Missing required field: ${field}` },
-          { status: 400 }
-        );
-      }
+    const requiredFields = ["amount", "interestRate", "tenure", "type", "purpose"];
+    const missingFields = requiredFields.filter(field => !loanData[field]);
+    
+    if (missingFields.length > 0) {
+      console.error("Missing required fields:", missingFields);
+      return NextResponse.json(
+        { error: `Missing required fields: ${missingFields.join(", ")}` },
+        { status: 400 }
+      );
     }
 
     // Calculate EMI and total amount
-    const principal = parseFloat(data.amount);
-    const rate = parseFloat(data.interestRate) / 100 / 12; // Monthly interest rate
-    const time = parseInt(data.tenure);
-    const emiAmount = (principal * rate * Math.pow(1 + rate, time)) / (Math.pow(1 + rate, time) - 1);
-    const totalAmount = emiAmount * time;
+    const emiAmount = calculateEMI(
+      loanData.amount,
+      loanData.interestRate,
+      loanData.tenure
+    );
+    const totalAmount = emiAmount * loanData.tenure;
 
-    const loan = await prisma.loan.update({
+    console.log("Calculated loan details:", {
+      emiAmount,
+      totalAmount,
+      tenure: loanData.tenure
+    });
+
+    // Update loan in database
+    const updatedLoan = await prisma.loan.update({
       where: { id: params.id },
       data: {
-        ...data,
+        amount: loanData.amount,
+        interestRate: loanData.interestRate,
+        tenure: loanData.tenure,
+        type: loanData.type,
+        purpose: loanData.purpose,
         emiAmount,
         totalAmount,
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+        updatedAt: new Date(),
       },
     });
 
-    return NextResponse.json(loan);
-  } catch (error: any) {
-    console.error('Error updating loan:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
-    }
+    console.log("Loan updated successfully:", updatedLoan);
+    return NextResponse.json(updatedLoan);
+  } catch (error) {
+    console.error("Error updating loan:", error);
     return NextResponse.json(
-      { error: 'Failed to update loan' },
+      { error: "Failed to update loan" },
       { status: 500 }
     );
   }
@@ -112,24 +121,25 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  console.log("DELETE /api/loans/[id] - Start processing loan deletion");
+  
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    console.error("Unauthorized access attempt - no valid session");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    await prisma.loan.delete({
+  try {
+    const loan = await prisma.loan.delete({
       where: { id: params.id },
     });
-
-    return NextResponse.json({ message: 'Loan deleted successfully' });
-  } catch (error: any) {
-    console.error('Error deleting loan:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
-    }
+    
+    console.log("Loan deleted successfully:", loan);
+    return NextResponse.json(loan);
+  } catch (error) {
+    console.error("Error deleting loan:", error);
     return NextResponse.json(
-      { error: 'Failed to delete loan' },
+      { error: "Failed to delete loan" },
       { status: 500 }
     );
   }

@@ -59,27 +59,34 @@ export default function EditLoanPage({ params }: { params: { id: string } }) {
 
     try {
       setIsSubmitting(true);
+      const formData = {
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        tenure: loan.tenure,
+        type: loan.type,
+        purpose: loan.purpose,
+      };
+      
+      console.log('Submitting loan update with data:', formData);
+      
       const response = await fetch(`/api/loans/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          amount: loan.amount,
-          interestRate: loan.interestRate,
-          tenure: loan.tenure,
-          type: loan.type,
-          purpose: loan.purpose,
-        }),
+        body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+      console.log('Received response:', data);
+      
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Failed to update loan');
       }
 
       router.push(`/loans/${params.id}`);
     } catch (error: any) {
+      console.error('Error updating loan:', error);
       setError(error.message);
     } finally {
       setIsSubmitting(false);

@@ -323,25 +323,31 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
             </h3>
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
               <ul className="divide-y divide-gray-200">
-                {loan.documents.map((doc) => (
-                  <li key={doc.id} className="px-4 py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{doc.name}</p>
-                        <p className="text-sm text-gray-500">{doc.type}</p>
-                      </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        doc.status === 'VERIFIED'
-                          ? 'bg-green-100 text-green-800'
-                          : doc.status === 'REJECTED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {doc.status}
-                      </span>
-                    </div>
+                {loan.documents?.length === 0 ? (
+                  <li className="px-4 py-4 text-sm text-gray-500">
+                    No documents found
                   </li>
-                ))}
+                ) : (
+                  loan.documents?.map((doc) => (
+                    <li key={doc.id} className="px-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{doc.name}</p>
+                          <p className="text-sm text-gray-500">{doc.type}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          doc.status === 'VERIFIED'
+                            ? 'bg-green-100 text-green-800'
+                            : doc.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {doc.status}
+                        </span>
+                      </div>
+                    </li>
+                  ))
+                )}
               </ul>
             </div>
           </div>
