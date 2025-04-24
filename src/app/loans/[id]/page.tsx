@@ -370,6 +370,9 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
               <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                 Approve Loan
               </Dialog.Title>
+              <Dialog.Description className="mt-2 text-sm text-gray-500">
+                Add your approval comments below. This will be recorded with the loan approval.
+              </Dialog.Description>
               <div className="mt-2">
                 <textarea
                   rows={4}
@@ -417,6 +420,9 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
               <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                 Reject Loan
               </Dialog.Title>
+              <Dialog.Description className="mt-2 text-sm text-gray-500">
+                Add your rejection reason below. This will be recorded with the loan rejection.
+              </Dialog.Description>
               <div className="mt-2">
                 <textarea
                   rows={4}
@@ -464,6 +470,9 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
               <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                 Delete Loan
               </Dialog.Title>
+              <Dialog.Description className="mt-2 text-sm text-gray-500">
+                Are you sure you want to delete this loan? This action cannot be undone.
+              </Dialog.Description>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">
                   Are you sure you want to delete this loan? This action cannot be undone.
