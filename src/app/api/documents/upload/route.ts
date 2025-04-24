@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+const ALLOWED_FILE_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png'];
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +42,8 @@ export async function POST(request: Request) {
     }
 
     // Validate file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!ALLOWED_FILE_EXTENSIONS.includes(fileExtension)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only PDF, JPEG, and PNG files are allowed' },
         { status: 400 }
@@ -75,12 +77,13 @@ export async function POST(request: Request) {
     }
 
     // Create uploads directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public', 'uploads', customerId);
+    const uploadDir = join(process.cwd(), 'uploads', customerId);
     await createDirIfNotExists(uploadDir);
 
     // Generate unique filename
     const timestamp = Date.now();
-    const filename = `${timestamp}-${file.name}`;
+    const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filename = `${timestamp}-${safeFilename}`;
     const filePath = join(uploadDir, filename);
 
     try {
@@ -106,6 +109,22 @@ export async function POST(request: Request) {
           customerId,
           loanId: loanId || null,
           uploadedBy: session.user.id,
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          loan: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+            },
+          },
         },
       });
 
