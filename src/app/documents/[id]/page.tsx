@@ -6,7 +6,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { 
   DocumentIcon,
   DocumentCheckIcon,
-  DocumentXMarkIcon,
+  XMarkIcon,
   ArrowLeftIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
@@ -163,7 +163,7 @@ export default function DocumentDetailsPage({ params }: { params: { id: string }
                   }}
                   className="btn-danger inline-flex items-center"
                 >
-                  <DocumentXMarkIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
+                  <XMarkIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
                   Reject Document
                 </button>
               </div>
