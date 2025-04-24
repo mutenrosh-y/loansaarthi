@@ -10,6 +10,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
+      console.error('Unauthorized access attempt to fetch loans');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -17,6 +18,7 @@ export async function GET(
     }
 
     const customerId = params.id;
+    console.log('Fetching loans for customer:', customerId);
 
     // Check if customer exists
     const customer = await prisma.customer.findUnique({
@@ -24,6 +26,7 @@ export async function GET(
     });
 
     if (!customer) {
+      console.error('Customer not found:', customerId);
       return NextResponse.json(
         { error: 'Customer not found' },
         { status: 404 }
@@ -45,11 +48,12 @@ export async function GET(
       },
     });
 
+    console.log(`Found ${loans.length} loans for customer ${customerId}`);
     return NextResponse.json(loans);
   } catch (error) {
     console.error('Error fetching customer loans:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch customer loans' },
+      { error: 'Failed to fetch customer loans', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

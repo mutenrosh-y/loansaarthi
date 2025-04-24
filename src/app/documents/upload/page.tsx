@@ -68,15 +68,40 @@ export default function DocumentUploadPage() {
     setSelectedLoan('');
     
     try {
+      console.log('Fetching loans for customer:', customerId);
       const response = await fetch(`/api/customers/${customerId}/loans`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch loans');
-      }
       const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to fetch loans:', data);
+        throw new Error(data.error || data.details || 'Failed to fetch loans');
+      }
+
+      console.log('Successfully fetched loans:', data);
       setLoans(data);
     } catch (err) {
+      console.error('Error in fetchLoans:', err);
       setLoanError(err instanceof Error ? err.message : 'Failed to fetch loans');
+      
+      // Retry once after a short delay
+      setTimeout(async () => {
+        try {
+          console.log('Retrying loan fetch for customer:', customerId);
+          const retryResponse = await fetch(`/api/customers/${customerId}/loans`);
+          const retryData = await retryResponse.json();
+
+          if (!retryResponse.ok) {
+            console.error('Retry failed to fetch loans:', retryData);
+            return;
+          }
+
+          console.log('Retry successful, fetched loans:', retryData);
+          setLoans(retryData);
+          setLoanError(null);
+        } catch (retryErr) {
+          console.error('Error in retry fetchLoans:', retryErr);
+        }
+      }, 2000);
     } finally {
       setLoadingLoans(false);
     }
