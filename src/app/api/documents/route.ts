@@ -36,6 +36,7 @@ export async function GET() {
       status: doc.status,
       uploadedAt: doc.createdAt.toISOString(),
       expiryDate: doc.expiryDate?.toISOString() || null,
+      url: doc.url,
     }));
 
     return NextResponse.json(transformedDocuments);

@@ -90,6 +90,19 @@ export default function DocumentDetailsPage({ params }: { params: { id: string }
     }
   };
 
+  const handleViewDocument = async () => {
+    try {
+      console.log('Attempting to view document:', document?.url);
+      if (!document?.url) {
+        throw new Error('Document URL is missing');
+      }
+      window.open(document.url, '_blank');
+    } catch (err) {
+      console.error('Error viewing document:', err);
+      setError('Failed to open document. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -226,15 +239,13 @@ export default function DocumentDetailsPage({ params }: { params: { id: string }
             <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
               <div className="flex justify-between items-center">
                 <h4 className="text-sm font-medium text-gray-500">Document Preview</h4>
-                <a
-                  href={document.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleViewDocument}
                   className="btn-secondary inline-flex items-center text-sm"
                 >
                   <EyeIcon className="mr-1.5 h-5 w-5" aria-hidden="true" />
                   View Document
-                </a>
+                </button>
               </div>
             </div>
           </div>
