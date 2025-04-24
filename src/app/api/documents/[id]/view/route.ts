@@ -57,9 +57,8 @@ export async function POST(
       
       console.log('Extracted public_id:', publicId);
       
-      // Generate or get cached signed URL
-      const signedUrl = await getSignedUrl(publicId, format);
-      return NextResponse.json({ url: signedUrl });
+      // Return the original URL since it's public
+      return NextResponse.json({ url: document.url });
     } catch (error) {
       console.error('Error generating signed URL:', {
         documentId: document.id,
