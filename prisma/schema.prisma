@@ -115,6 +115,7 @@ model Document {
   name        String
   type        String
   url         String
+  cloudinaryPublicId String
   status      DocumentStatus @default(PENDING)
   expiryDate  DateTime?
   verificationComments String?

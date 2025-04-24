@@ -148,9 +148,11 @@ export async function POST(request: Request) {
           name: file.name,
           type: documentType,
           url: (uploadResponse as any).secure_url,
+          cloudinaryPublicId: (uploadResponse as any).public_id,
           customerId,
           loanId: loanId || null,
           uploadedBy: session.user.id,
+          status: 'PENDING',
         },
         include: {
           customer: {

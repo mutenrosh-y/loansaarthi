@@ -16,6 +16,7 @@ interface Document {
   name: string;
   type: string;
   url: string;
+  cloudinaryPublicId: string;
   status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
   expiryDate: string | null;
   customer: {
@@ -92,11 +93,22 @@ export default function DocumentDetailsPage({ params }: { params: { id: string }
 
   const handleViewDocument = async () => {
     try {
-      console.log('Attempting to view document:', document?.url);
-      if (!document?.url) {
-        throw new Error('Document URL is missing');
+      console.log('Attempting to view document:', document?.cloudinaryPublicId);
+      if (!document?.cloudinaryPublicId) {
+        throw new Error('Document ID is missing');
       }
-      window.open(document.url, '_blank');
+      
+      // Get signed URL from server
+      const response = await fetch(`/api/documents/${document.id}/view`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get document URL');
+      }
+      
+      const { url } = await response.json();
+      window.open(url, '_blank');
     } catch (err) {
       console.error('Error viewing document:', err);
       setError('Failed to open document. Please try again.');
