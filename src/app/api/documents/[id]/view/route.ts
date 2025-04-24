@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { v2 as cloudinary } from 'cloudinary';
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { getSignedUrl } from '@/lib/cloudinary';
 
 export async function POST(
   request: Request,
@@ -28,15 +22,6 @@ export async function POST(
     // Get document
     const document = await prisma.document.findUnique({
       where: { id: params.id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
     });
 
     if (!document) {
@@ -47,12 +32,11 @@ export async function POST(
       );
     }
 
-    // Generate signed URL
-    const signedUrl = cloudinary.utils.private_download_url(
-      document.cloudinaryPublicId,
-      document.url.split('.').pop() || 'pdf', // Get file extension from URL
-      { expires_at: Math.floor(Date.now() / 1000) + 3600 } // URL expires in 1 hour
-    );
+    // Get file format from URL
+    const format = document.url.split('.').pop() || 'pdf';
+
+    // Generate or get cached signed URL
+    const signedUrl = await getSignedUrl(document.cloudinaryPublicId, format);
 
     return NextResponse.json({ url: signedUrl });
   } catch (error) {
