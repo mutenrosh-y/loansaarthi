@@ -37,43 +37,29 @@ export async function POST(
       id: document.id,
       name: document.name,
       url: document.url,
-      cloudinaryPublicId: document.cloudinaryPublicId,
     });
 
     // Get file format from URL
     const format = document.url.split('.').pop() || 'pdf';
 
     try {
+      // Extract public_id from URL if cloudinaryPublicId is not available
+      const urlParts = document.url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const publicId = fileName.split('.')[0];
+      
+      console.log('Using public_id from URL:', publicId);
+      
       // Generate or get cached signed URL
-      const signedUrl = await getSignedUrl(document.cloudinaryPublicId, format);
+      const signedUrl = await getSignedUrl(publicId, format);
       return NextResponse.json({ url: signedUrl });
     } catch (error) {
       console.error('Error generating signed URL:', {
         documentId: document.id,
-        publicId: document.cloudinaryPublicId,
+        url: document.url,
         format,
         error,
       });
-      
-      // If the error is about resource not found, try to extract the public_id from the URL
-      if (error instanceof Error && error.message.includes('Resource not found')) {
-        const urlParts = document.url.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        const publicId = fileName.split('.')[0];
-        
-        console.log('Attempting to use public_id from URL:', publicId);
-        
-        try {
-          const signedUrl = await getSignedUrl(publicId, format);
-          return NextResponse.json({ url: signedUrl });
-        } catch (retryError) {
-          console.error('Error in retry attempt:', retryError);
-          return NextResponse.json(
-            { error: 'Failed to generate document URL' },
-            { status: 500 }
-          );
-        }
-      }
       
       return NextResponse.json(
         { error: 'Failed to generate document URL' },
