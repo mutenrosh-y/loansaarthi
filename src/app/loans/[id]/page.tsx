@@ -42,7 +42,7 @@ interface Loan {
   approvalComments?: string;
   rejectionReason?: string;
   rejectionDate?: string;
-  documents: Array<{
+  documents?: Array<{
     id: string;
     name: string;
     type: string;
@@ -323,12 +323,8 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
             </h3>
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
               <ul className="divide-y divide-gray-200">
-                {loan.documents?.length === 0 ? (
-                  <li className="px-4 py-4 text-sm text-gray-500">
-                    No documents found
-                  </li>
-                ) : (
-                  loan.documents?.map((doc) => (
+                {loan.documents && loan.documents.length > 0 ? (
+                  loan.documents.map((doc) => (
                     <li key={doc.id} className="px-4 py-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -347,6 +343,10 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
                       </div>
                     </li>
                   ))
+                ) : (
+                  <li className="px-4 py-4 text-sm text-gray-500">
+                    No documents found
+                  </li>
                 )}
               </ul>
             </div>
