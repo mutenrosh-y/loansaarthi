@@ -32,17 +32,58 @@ export async function POST(
       );
     }
 
+    // Log document details for debugging
+    console.log('Document found:', {
+      id: document.id,
+      name: document.name,
+      url: document.url,
+      cloudinaryPublicId: document.cloudinaryPublicId,
+    });
+
     // Get file format from URL
     const format = document.url.split('.').pop() || 'pdf';
 
-    // Generate or get cached signed URL
-    const signedUrl = await getSignedUrl(document.cloudinaryPublicId, format);
-
-    return NextResponse.json({ url: signedUrl });
+    try {
+      // Generate or get cached signed URL
+      const signedUrl = await getSignedUrl(document.cloudinaryPublicId, format);
+      return NextResponse.json({ url: signedUrl });
+    } catch (error) {
+      console.error('Error generating signed URL:', {
+        documentId: document.id,
+        publicId: document.cloudinaryPublicId,
+        format,
+        error,
+      });
+      
+      // If the error is about resource not found, try to extract the public_id from the URL
+      if (error instanceof Error && error.message.includes('Resource not found')) {
+        const urlParts = document.url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const publicId = fileName.split('.')[0];
+        
+        console.log('Attempting to use public_id from URL:', publicId);
+        
+        try {
+          const signedUrl = await getSignedUrl(publicId, format);
+          return NextResponse.json({ url: signedUrl });
+        } catch (retryError) {
+          console.error('Error in retry attempt:', retryError);
+          return NextResponse.json(
+            { error: 'Failed to generate document URL' },
+            { status: 500 }
+          );
+        }
+      }
+      
+      return NextResponse.json(
+        { error: 'Failed to generate document URL' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error generating signed URL:', error);
+    console.error('Error in document view handler:', error);
     return NextResponse.json(
-      { error: 'Failed to generate document URL' },
+      { error: 'Failed to process document view request' },
       { status: 500 }
     );
   }

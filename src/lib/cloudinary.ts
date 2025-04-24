@@ -20,21 +20,38 @@ export const getSignedUrl = async (publicId: string, format: string): Promise<st
     return cached.url;
   }
 
-  // Generate new signed URL
-  const expiresAt = Math.floor(now / 1000) + 3600; // 1 hour from now
-  const signedUrl = cloudinary.utils.private_download_url(
-    publicId,
-    format,
-    { expires_at: expiresAt }
-  );
+  try {
+    // Generate new signed URL
+    const expiresAt = Math.floor(now / 1000) + 3600; // 1 hour from now
+    
+    // Log the attempt to generate URL
+    console.log('Generating signed URL for:', {
+      publicId,
+      format,
+      expiresAt,
+    });
 
-  // Cache the new URL
-  urlCache.set(cacheKey, {
-    url: signedUrl,
-    expiresAt: expiresAt * 1000, // Convert to milliseconds
-  });
+    const signedUrl = cloudinary.utils.private_download_url(
+      publicId,
+      format,
+      { expires_at: expiresAt }
+    );
 
-  return signedUrl;
+    // Cache the new URL
+    urlCache.set(cacheKey, {
+      url: signedUrl,
+      expiresAt: expiresAt * 1000, // Convert to milliseconds
+    });
+
+    return signedUrl;
+  } catch (error) {
+    console.error('Error generating signed URL:', {
+      publicId,
+      format,
+      error,
+    });
+    throw error;
+  }
 };
 
 // Clean up expired cache entries periodically
