@@ -22,21 +22,6 @@ export async function POST(
     // Get document
     const document = await prisma.document.findUnique({
       where: { id: params.id },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-        cloudinaryPublicId: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        customerId: true,
-        type: true,
-        expiryDate: true,
-        loanId: true,
-        uploadedBy: true,
-        verifiedBy: true,
-      },
     });
 
     if (!document) {
@@ -52,16 +37,25 @@ export async function POST(
       id: document.id,
       name: document.name,
       url: document.url,
-      cloudinaryPublicId: document.cloudinaryPublicId,
     });
 
     // Get file format from URL
     const format = document.url.split('.').pop() || 'pdf';
 
     try {
-      // Use the stored cloudinaryPublicId directly
-      const publicId = document.cloudinaryPublicId;
-      console.log('Using stored public_id:', publicId);
+      // Extract public_id from Cloudinary URL
+      // URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.pdf
+      const urlParts = document.url.split('/');
+      const uploadIndex = urlParts.findIndex(part => part === 'upload');
+      if (uploadIndex === -1) {
+        throw new Error('Invalid Cloudinary URL format');
+      }
+      
+      // Get everything after 'upload/' and before the file extension
+      const pathAfterUpload = urlParts.slice(uploadIndex + 1).join('/');
+      const publicId = pathAfterUpload.split('.')[0]; // Remove file extension
+      
+      console.log('Extracted public_id:', publicId);
       
       // Generate or get cached signed URL
       const signedUrl = await getSignedUrl(publicId, format);
