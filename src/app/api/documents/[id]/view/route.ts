@@ -43,12 +43,20 @@ export async function POST(
     const format = document.url.split('.').pop() || 'pdf';
 
     try {
-      // Extract public_id from URL if cloudinaryPublicId is not available
+      // Extract public_id from Cloudinary URL
+      // URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.jpg
       const urlParts = document.url.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const publicId = fileName.split('.')[0];
+      const uploadIndex = urlParts.findIndex(part => part === 'upload');
+      if (uploadIndex === -1) {
+        throw new Error('Invalid Cloudinary URL format');
+      }
       
-      console.log('Using public_id from URL:', publicId);
+      // Get the path after 'upload/' which includes the version and public_id
+      const pathAfterUpload = urlParts.slice(uploadIndex + 1).join('/');
+      // Remove the version number and file extension to get the public_id
+      const publicId = pathAfterUpload.split('/').slice(1).join('/').split('.')[0];
+      
+      console.log('Extracted public_id:', publicId);
       
       // Generate or get cached signed URL
       const signedUrl = await getSignedUrl(publicId, format);
