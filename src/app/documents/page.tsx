@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { 
   PlusIcon, 
@@ -17,73 +17,42 @@ import Link from 'next/link';
 interface Document {
   id: string;
   name: string;
-  type: 'identity' | 'address' | 'income' | 'bank' | 'property' | 'other';
+  type: string;
   customerName: string;
   size: string;
-  status: 'pending' | 'verified' | 'rejected';
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
   uploadedAt: string;
   expiryDate: string | null;
 }
 
-const MOCK_DOCUMENTS: Document[] = [
-  {
-    id: 'DOC001',
-    name: 'Aadhar Card.pdf',
-    type: 'identity',
-    customerName: 'John Doe',
-    size: '2.4 MB',
-    status: 'verified',
-    uploadedAt: '2023-01-15',
-    expiryDate: null,
-  },
-  {
-    id: 'DOC002',
-    name: 'Electricity Bill.pdf',
-    type: 'address',
-    customerName: 'Jane Smith',
-    size: '1.2 MB',
-    status: 'verified',
-    uploadedAt: '2023-02-10',
-    expiryDate: '2023-05-10',
-  },
-  {
-    id: 'DOC003',
-    name: 'Salary Slip.pdf',
-    type: 'income',
-    customerName: 'Amit Patel',
-    size: '3.1 MB',
-    status: 'pending',
-    uploadedAt: '2023-03-05',
-    expiryDate: null,
-  },
-  {
-    id: 'DOC004',
-    name: 'Bank Statement.pdf',
-    type: 'bank',
-    customerName: 'Priya Singh',
-    size: '4.7 MB',
-    status: 'rejected',
-    uploadedAt: '2023-02-28',
-    expiryDate: null,
-  },
-  {
-    id: 'DOC005',
-    name: 'Property Deed.pdf',
-    type: 'property',
-    customerName: 'Rajesh Kumar',
-    size: '5.2 MB',
-    status: 'pending',
-    uploadedAt: '2023-01-20',
-    expiryDate: null,
-  },
-];
-
 export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED'>('all');
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch('/api/documents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      const data = await response.json();
+      setDocuments(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch documents');
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const filteredDocuments = MOCK_DOCUMENTS.filter(doc => {
+  const filteredDocuments = documents.filter(doc => {
     const matchesSearch = 
       doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       doc.customerName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -113,14 +82,16 @@ export default function DocumentsPage() {
     }
   };
 
-  const getDocumentTypeIcon = (type: string) => {
-    switch(type) {
-      case 'verified':
+  const getDocumentTypeIcon = (status: string) => {
+    switch(status) {
+      case 'VERIFIED':
         return <DocumentCheckIcon className="h-5 w-5 text-green-500" aria-hidden="true" />;
-      case 'pending':
+      case 'PENDING':
         return <DocumentMagnifyingGlassIcon className="h-5 w-5 text-yellow-500" aria-hidden="true" />;
-      case 'rejected':
+      case 'REJECTED':
         return <DocumentIcon className="h-5 w-5 text-red-500" aria-hidden="true" />;
+      case 'EXPIRED':
+        return <DocumentIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />;
       default:
         return <DocumentIcon className="h-5 w-5 text-gray-500" aria-hidden="true" />;
     }
@@ -128,16 +99,56 @@ export default function DocumentsPage() {
 
   const getStatusBadgeClass = (status: string) => {
     switch(status) {
-      case 'pending':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'verified':
+      case 'VERIFIED':
         return 'bg-green-100 text-green-800';
-      case 'rejected':
+      case 'REJECTED':
         return 'bg-red-100 text-red-800';
+      case 'EXPIRED':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error loading documents</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -186,12 +197,13 @@ export default function DocumentsPage() {
                 <select
                   className="block w-full rounded-md border-0 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm"
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED')}
                 >
                   <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="verified">Verified</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="VERIFIED">Verified</option>
+                  <option value="REJECTED">Rejected</option>
+                  <option value="EXPIRED">Expired</option>
                 </select>
               </div>
             </div>
@@ -242,7 +254,7 @@ export default function DocumentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(document.status)}`}>
-                            {document.status.charAt(0).toUpperCase() + document.status.slice(1)}
+                            {document.status.charAt(0) + document.status.slice(1).toLowerCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
@@ -259,7 +271,7 @@ export default function DocumentsPage() {
                             <button className="text-green-600 hover:text-green-900">
                               <ArrowDownTrayIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
-                            {document.status === 'pending' && (
+                            {document.status === 'PENDING' && (
                               <button className="text-red-600 hover:text-red-900">
                                 <TrashIcon className="h-5 w-5" aria-hidden="true" />
                               </button>
@@ -284,7 +296,7 @@ export default function DocumentsPage() {
                 <div>
                   <p className="text-sm text-gray-700">
                     Showing <span className="font-medium">{filteredDocuments.length}</span> of{' '}
-                    <span className="font-medium">{MOCK_DOCUMENTS.length}</span> documents
+                    <span className="font-medium">{documents.length}</span> documents
                   </p>
                 </div>
               </div>
