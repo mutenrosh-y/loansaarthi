@@ -23,6 +23,7 @@ interface Document {
   status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
   uploadedAt: string;
   expiryDate: string | null;
+  url: string;
 }
 
 export default function DocumentsPage() {
@@ -39,9 +40,12 @@ export default function DocumentsPage() {
 
   const fetchDocuments = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await fetch('/api/documents');
       if (!response.ok) {
-        throw new Error('Failed to fetch documents');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch documents');
       }
       const data = await response.json();
       setDocuments(data);
@@ -109,6 +113,33 @@ export default function DocumentsPage() {
         return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleViewDocument = async (document: Document) => {
+    try {
+      window.open(document.url, '_blank');
+    } catch (err) {
+      setError('Failed to open document');
+    }
+  };
+
+  const handleDownloadDocument = async (document: Document) => {
+    try {
+      const response = await fetch(document.url);
+      if (!response.ok) throw new Error('Failed to download document');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = document.name;
+      window.document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      window.document.body.removeChild(a);
+    } catch (err) {
+      setError('Failed to download document');
     }
   };
 
@@ -241,10 +272,12 @@ export default function DocumentsPage() {
                       <tr key={document.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <DocumentIcon className="h-5 w-5 text-gray-500 mr-2" aria-hidden="true" />
-                            <div className="font-medium text-gray-900">{document.name}</div>
+                            {getDocumentTypeIcon(document.status)}
+                            <div className="ml-2">
+                              <div className="font-medium text-gray-900">{document.name}</div>
+                              <div className="text-xs text-gray-500">{document.size}</div>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500">{document.size}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-900">
                           {getDocumentTypeLabel(document.type)}
@@ -258,24 +291,27 @@ export default function DocumentsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {document.uploadedAt}
+                          {new Date(document.uploadedAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                          {document.expiryDate || 'N/A'}
+                          {document.expiryDate ? new Date(document.expiryDate).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">
+                            <button
+                              onClick={() => handleViewDocument(document)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="View Document"
+                            >
                               <EyeIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
-                            <button className="text-green-600 hover:text-green-900">
+                            <button
+                              onClick={() => handleDownloadDocument(document)}
+                              className="text-green-600 hover:text-green-900"
+                              title="Download Document"
+                            >
                               <ArrowDownTrayIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
-                            {document.status === 'PENDING' && (
-                              <button className="text-red-600 hover:text-red-900">
-                                <TrashIcon className="h-5 w-5" aria-hidden="true" />
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
