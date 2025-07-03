@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -13,6 +13,7 @@ interface Customer {
 
 export default function AddLoanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +26,18 @@ export default function AddLoanPage() {
     tenure: '',
     purpose: '',
   });
+
+  // Autofill from query params on mount
+  useEffect(() => {
+    const autofill: any = {}
+    for (const key of ['customerId', 'amount', 'purpose']) {
+      const value = searchParams.get(key)
+      if (value) autofill[key] = value
+    }
+    if (Object.keys(autofill).length > 0) {
+      setFormData(prev => ({ ...prev, ...autofill }))
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchCustomers();

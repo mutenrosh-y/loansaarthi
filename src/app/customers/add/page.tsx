@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -18,6 +18,7 @@ interface User {
 
 export default function AddCustomerPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +39,17 @@ export default function AddCustomerPage() {
     fetchBranches();
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    const autofill: any = {}
+    for (const key of ['name', 'email', 'phone', 'address', 'city', 'state', 'country']) {
+      const value = searchParams.get(key)
+      if (value) autofill[key] = value
+    }
+    if (Object.keys(autofill).length > 0) {
+      setFormData(prev => ({ ...prev, ...autofill }))
+    }
+  }, [searchParams])
 
   const fetchBranches = async () => {
     try {
@@ -85,7 +97,19 @@ export default function AddCustomerPage() {
         throw new Error(data.error || 'Failed to create customer');
       }
 
-      router.push('/customers');
+      const data = await response.json();
+      // If this was a convert flow, redirect to add loan with prefill
+      const inquiryId = searchParams.get('inquiryId')
+      const loanAmount = searchParams.get('loanAmount')
+      const purpose = searchParams.get('purpose')
+      if (inquiryId && data.id) {
+        let loanAddUrl = `/loans/add?customerId=${encodeURIComponent(data.id)}`
+        if (loanAmount) loanAddUrl += `&amount=${encodeURIComponent(loanAmount)}`
+        if (purpose) loanAddUrl += `&purpose=${encodeURIComponent(purpose)}`
+        router.push(loanAddUrl)
+      } else {
+        router.push('/customers');
+      }
     } catch (error: any) {
       setError(error.message);
     }

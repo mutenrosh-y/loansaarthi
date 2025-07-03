@@ -29,79 +29,69 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalCustomers: 0,
-    totalLoans: 0,
-    pendingLoans: 0,
-    approvedLoans: 0,
-    totalDocuments: 0,
-    pendingDocuments: 0,
-    revenueData: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null)
+  const [activity, setActivity] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    // Simulate API fetch with mock data
-    setTimeout(() => {
-      setStats({
-        totalCustomers: 124,
-        totalLoans: 85,
-        pendingLoans: 12,
-        approvedLoans: 68,
-        totalDocuments: 256,
-        pendingDocuments: 18,
-        revenueData: [
-          { month: 'Jan', amount: 120000 },
-          { month: 'Feb', amount: 150000 },
-          { month: 'Mar', amount: 180000 },
-          { month: 'Apr', amount: 220000 },
-          { month: 'May', amount: 270000 },
-          { month: 'Jun', amount: 250000 },
-        ]
-      });
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+    async function fetchData() {
+      setIsLoading(true)
+      setError('')
+      try {
+        const statsRes = await fetch('/api/dashboard/stats')
+        const activityRes = await fetch('/api/dashboard/activity')
+        if (!statsRes.ok || !activityRes.ok) throw new Error('Failed to fetch dashboard data')
+        setStats(await statsRes.json())
+        setActivity(await activityRes.json())
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const statCards = [
     {
       name: 'Total Customers',
-      value: stats.totalCustomers,
+      value: stats?.totalCustomers || 0,
       icon: UserGroupIcon,
       color: 'bg-blue-500',
       link: '/customers'
     },
     {
       name: 'Total Loans',
-      value: stats.totalLoans,
+      value: stats?.totalLoans || 0,
       icon: CurrencyDollarIcon,
       color: 'bg-green-500',
       link: '/loans'
     },
     {
       name: 'Pending Loans',
-      value: stats.pendingLoans,
+      value: stats?.pendingLoans || 0,
       icon: ArrowTrendingUpIcon,
       color: 'bg-yellow-500',
       link: '/loans?status=pending'
     },
     {
       name: 'Approved Loans',
-      value: stats.approvedLoans,
+      value: stats?.approvedLoans || 0,
       icon: ArrowTrendingDownIcon,
       color: 'bg-purple-500',
       link: '/loans?status=approved'
     },
     {
       name: 'Total Documents',
-      value: stats.totalDocuments,
+      value: stats?.totalDocuments || 0,
       icon: DocumentTextIcon,
       color: 'bg-red-500',
       link: '/documents'
     },
     {
       name: 'Pending Documents',
-      value: stats.pendingDocuments,
+      value: stats?.pendingDocuments || 0,
       icon: DocumentTextIcon,
       color: 'bg-indigo-500',
       link: '/documents?status=pending'
@@ -129,6 +119,10 @@ export default function DashboardPage() {
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : error ? (
+              <div className="flex justify-center items-center h-64 text-red-500">
+                {error}
               </div>
             ) : (
               <>
@@ -173,15 +167,13 @@ export default function DashboardPage() {
                       </select>
                     </div>
                     <div className="h-64 flex items-end justify-between">
-                      {stats.revenueData.map((data, index) => (
+                      {stats?.revenueData?.map((data: { month: string; amount: number }, index: number) => (
                         <div key={index} className="flex flex-col items-center">
                           <div 
-                            className="w-12 bg-blue-500 rounded-t-md" 
-                            style={{ 
-                              height: `${(data.amount / 300000) * 180}px`,
-                            }}
+                            className="w-12 bg-gradient-to-t from-blue-600 to-blue-300 rounded-t-xl shadow-lg transition-all duration-500"
+                            style={{ height: `${(data.amount / 300000) * 180}px` }}
                           ></div>
-                          <div className="text-xs text-gray-500 mt-2">{data.month}</div>
+                          <div className="text-xs text-gray-500 mt-2 font-mono tracking-wide">{data.month}</div>
                         </div>
                       ))}
                     </div>
@@ -194,17 +186,14 @@ export default function DashboardPage() {
                       <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
                     </div>
                     <div className="space-y-4">
-                      {recentActivities.map((activity) => (
-                        <div key={activity.id} className="flex">
-                          <div className="flex-shrink-0 h-3 w-3 rounded-full bg-blue-500 mt-1.5"></div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                            <div className="flex space-x-2 text-xs text-gray-500">
-                              <span>{activity.user}</span>
-                              <span>•</span>
-                              <span>{activity.time}</span>
-                            </div>
+                      {activity.map((activity: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-3 bg-white/60 backdrop-blur-md rounded-lg px-4 py-2 shadow transition hover:scale-[1.01]">
+                          <div className="flex-shrink-0 h-3 w-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
+                          <div className="flex-1">
+                            <span className="font-semibold text-gray-800">{activity.action}</span>
+                            <span className="ml-2 text-xs text-gray-500">by {activity.user}</span>
                           </div>
+                          <span className="text-xs text-gray-400 font-mono">{new Date(activity.time).toLocaleString()}</span>
                         </div>
                       ))}
                     </div>

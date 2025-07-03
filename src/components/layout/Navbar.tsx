@@ -19,6 +19,7 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: UserGroupIcon },
   { name: 'Loans', href: '/loans', icon: CurrencyDollarIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
+  { name: 'Inquiries', href: '/inquiries', icon: DocumentTextIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 
@@ -29,6 +30,12 @@ export default function Navbar() {
   
   // Determine the logo link destination based on authentication status
   const logoLinkDestination = status === 'authenticated' ? '/dashboard' : '/';
+
+  // Only show 'Inquiries' tab for staff roles
+  const STAFF_ROLES = ['ADMIN', 'BRANCH_MANAGER', 'LOAN_OFFICER'];
+  const filteredNavigation = navigation.filter(item =>
+    item.name !== 'Inquiries' || (session?.user && STAFF_ROLES.includes(session.user.role))
+  );
 
   return (
     <nav className="bg-white shadow-sm">
@@ -41,7 +48,7 @@ export default function Navbar() {
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navigation.map((item) => {
+              {filteredNavigation.map((item) => {
                 const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
                 return (
                   <Link
@@ -96,7 +103,7 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="sm:hidden">
           <div className="space-y-1 pb-3 pt-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
               return (
                 <Link

@@ -1,36 +1,6 @@
-"use client";
-import { useRouter } from 'next/navigation';
-import AppLayout from '@/components/layout/AppLayout';
-import { ArrowLeftIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-
-interface Inquiry {
-  id: string;
-  name: string;
-  gender: string;
-  dobYear: string;
-  dobMonth: string;
-  dobDay: string;
-  mobile: string;
-  email: string;
-  pan: string;
-  loanAmount: number;
-  employmentType: string;
-  companyName: string;
-  monthlyIncome: number;
-  workEmail: string;
-  address1: string;
-  address2: string;
-  city: string;
-  state: string;
-  pincode: string;
-  otpVerified: boolean;
-  status: string;
-  notes?: string;
-  createdAt: string;
-  purpose?: string;
-}
+import { ArrowLeftIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 const STATUS_OPTIONS = [
   { value: 'NEW', label: 'New' },
@@ -40,10 +10,10 @@ const STATUS_OPTIONS = [
 ]
 
 export default function InquiryDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const [inquiry, setInquiry] = useState<Inquiry | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const router = useRouter()
+  const [inquiry, setInquiry] = useState<Inquiry | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [status, setStatus] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -58,8 +28,8 @@ export default function InquiryDetailPage({ params }: { params: { id: string } }
         setNotes(data.notes || '')
       })
       .catch(() => setError('Inquiry not found'))
-      .finally(() => setLoading(false));
-  }, [params.id]);
+      .finally(() => setLoading(false))
+  }, [params.id])
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value
@@ -108,14 +78,14 @@ export default function InquiryDetailPage({ params }: { params: { id: string } }
       <AppLayout>
         <div className="py-6"><div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8"><div className="text-center">Loading...</div></div></div>
       </AppLayout>
-    );
+    )
   }
   if (error || !inquiry) {
     return (
       <AppLayout>
         <div className="py-6"><div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8"><div className="rounded-md bg-red-50 p-4"><div className="text-sm text-red-700">{error || 'Inquiry not found'}</div></div></div></div>
       </AppLayout>
-    );
+    )
   }
 
   // Pre-fill customer add form with query params
@@ -126,10 +96,7 @@ export default function InquiryDetailPage({ params }: { params: { id: string } }
     address: `${inquiry.address1}, ${inquiry.address2}`,
     city: inquiry.city,
     state: inquiry.state,
-    country: 'India',
-    inquiryId: inquiry.id,
-    loanAmount: inquiry.loanAmount,
-    purpose: inquiry.purpose || '',
+    country: 'India'
   }
   const customerAddUrl = `/customers/add?${Object.entries(customerPrefill).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')}`
 
@@ -186,54 +153,6 @@ export default function InquiryDetailPage({ params }: { params: { id: string } }
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.name}</dd>
                 </div>
                 <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Gender</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.gender}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Date of Birth</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.dobDay}-{inquiry.dobMonth}-{inquiry.dobYear}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Mobile</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.mobile}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.email}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">PAN</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.pan}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Loan Amount</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">₹{inquiry.loanAmount.toLocaleString('en-IN')}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Employment Type</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.employmentType}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Company Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.companyName}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Monthly Income</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">₹{inquiry.monthlyIncome.toLocaleString('en-IN')}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Work Email</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.workEmail}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.address1}, {inquiry.address2}, {inquiry.city}, {inquiry.state} - {inquiry.pincode}</dd>
-                </div>
-                <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Created</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{new Date(inquiry.createdAt).toLocaleString()}</dd>
-                </div>
-                <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
                   <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{inquiry.status}</dd>
                 </div>
@@ -272,5 +191,5 @@ export default function InquiryDetailPage({ params }: { params: { id: string } }
         </div>
       </div>
     </AppLayout>
-  );
+  )
 } 
