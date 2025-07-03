@@ -1,0 +1,18 @@
+flowchart TD
+    A[Registration] --> B[User Created (Default: LOAN_OFFICER)]
+    B --> C[Authentication (Login: All roles)]
+    C --> D[Role Assignment (ADMIN assigns other roles)]
+    D --> E[LOAN_OFFICER Actions]
+    D --> F[BRANCH_MANAGER Actions]
+    D --> G[ADMIN Actions]
+    D --> H[CUSTOMER_SERVICE Actions]
+    E -->|Create/Edit Customers| I[Customer]
+    E -->|Create/Edit Loans| J[Loan]
+    E -->|Upload Documents| K[Document]
+    F -->|Approve/Reject Loans/Docs| J
+    F -->|Manage Branch| L[Branch]
+    G -->|Full Access| I
+    G -->|Manage Users| M[User]
+    G -->|Manage Branches| L
+    H -->|Support| N[Support]
+    H -->|View Info| O[View Info] 

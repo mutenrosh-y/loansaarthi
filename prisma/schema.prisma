@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,159 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  name              String
+  password          String
+  role              UserRole
+  branchId          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  customers         Customer[]
+  documents         Document[]
+  verifiedDocuments Document[]     @relation("DocumentVerification")
+  approvedLoans     Loan[]         @relation("LoanApproval")
+  loans             Loan[]
+  Notification      Notification[]
+  branch            Branch?        @relation(fields: [branchId], references: [id])
+}
+
+model Branch {
+  id        String     @id @default(cuid())
+  name      String
+  address   String
+  city      String
+  state     String
+  country   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customers Customer[]
+  users     User[]
+}
+
+model Customer {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phone        String
+  address      String
+  city         String
+  state        String
+  country      String
+  kycStatus    Boolean    @default(false)
+  branchId     String
+  assignedTo   String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assignedUser User       @relation(fields: [assignedTo], references: [id])
+  branch       Branch     @relation(fields: [branchId], references: [id])
+  documents    Document[]
+  loans        Loan[]
+}
+
+model Loan {
+  id               String         @id @default(cuid())
+  customerId       String
+  amount           Float
+  interestRate     Float
+  tenure           Int
+  status           LoanStatus     @default(PENDING)
+  emiAmount        Float
+  totalAmount      Float
+  disbursedAmount  Float?
+  disbursedDate    DateTime?
+  createdBy        String
+  approvedBy       String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  purpose          String
+  type             String
+  approvalComments String?
+  approvalDate     DateTime?
+  rejectionDate    DateTime?
+  rejectionReason  String?
+  documents        Document[]
+  approvedByUser   User?          @relation("LoanApproval", fields: [approvedBy], references: [id])
+  createdByUser    User           @relation(fields: [createdBy], references: [id])
+  customer         Customer       @relation(fields: [customerId], references: [id])
+  Notification     Notification[]
+}
+
+model Document {
+  id                   String         @id @default(cuid())
+  name                 String
+  type                 String
+  url                  String
+  status               DocumentStatus @default(PENDING)
+  expiryDate           DateTime?
+  customerId           String
+  loanId               String?
+  uploadedBy           String
+  verifiedBy           String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  verificationComments String?
+  verifiedAt           DateTime?
+  cloudinaryPublicId   String
+  customer             Customer       @relation(fields: [customerId], references: [id])
+  loan                 Loan?          @relation(fields: [loanId], references: [id])
+  uploadedByUser       User           @relation(fields: [uploadedBy], references: [id])
+  verifiedByUser       User?          @relation("DocumentVerification", fields: [verifiedBy], references: [id])
+  Notification         Notification[]
+}
+
+model Communication {
+  id        String   @id @default(cuid())
+  type      String
+  recipient String
+  subject   String?
+  content   String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id         String    @id
+  type       String
+  title      String
+  message    String
+  read       Boolean   @default(false)
+  userId     String
+  loanId     String?
+  documentId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  Document   Document? @relation(fields: [documentId], references: [id])
+  Loan       Loan?     @relation(fields: [loanId], references: [id])
+  User       User      @relation(fields: [userId], references: [id])
+}
+
+model LoanInquiry {
+  id             String   @id @default(cuid())
+  name           String
+  gender         String
+  dobYear        String
+  dobMonth       String
+  dobDay         String
+  mobile         String
+  email          String
+  pan            String
+  loanAmount     Float
+  employmentType String
+  companyName    String
+  monthlyIncome  Float
+  workEmail      String
+  address1       String
+  address2       String
+  city           String
+  state          String
+  pincode        String
+  otpVerified    Boolean
+  createdAt      DateTime @default(now())
 }
 
 enum UserRole {
@@ -31,114 +181,4 @@ enum DocumentStatus {
   VERIFIED
   REJECTED
   EXPIRED
-}
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  password      String
-  role          UserRole
-  branchId      String?
-  branch        Branch?   @relation(fields: [branchId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  customers     Customer[]
-  loans         Loan[]
-  documents     Document[]
-  approvedLoans Loan[]    @relation("LoanApproval")
-  verifiedDocuments Document[] @relation("DocumentVerification")
-}
-
-model Branch {
-  id        String   @id @default(cuid())
-  name      String
-  address   String
-  city      String
-  state     String
-  country   String
-  users     User[]
-  customers Customer[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Customer {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  phone         String
-  address       String
-  city          String
-  state         String
-  country       String
-  kycStatus     Boolean   @default(false)
-  branchId      String
-  branch        Branch    @relation(fields: [branchId], references: [id])
-  assignedTo    String
-  assignedUser  User      @relation(fields: [assignedTo], references: [id])
-  loans         Loan[]
-  documents     Document[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-model Loan {
-  id              String      @id @default(cuid())
-  customerId      String
-  customer        Customer    @relation(fields: [customerId], references: [id])
-  type            String      // PERSONAL, HOME, BUSINESS, EDUCATION, VEHICLE
-  amount          Float
-  interestRate    Float
-  tenure          Int         // in months
-  purpose         String
-  status          LoanStatus  @default(PENDING)
-  emiAmount       Float
-  totalAmount     Float
-  disbursedAmount Float?
-  disbursedDate   DateTime?
-  documents       Document[]
-  createdBy       String
-  createdByUser   User        @relation(fields: [createdBy], references: [id])
-  approvedBy      String?
-  approvedByUser  User?       @relation("LoanApproval", fields: [approvedBy], references: [id])
-  approvalDate    DateTime?
-  approvalComments String?
-  rejectionReason String?
-  rejectionDate   DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-}
-
-model Document {
-  id          String         @id @default(cuid())
-  name        String
-  type        String
-  url         String
-  cloudinaryPublicId String
-  status      DocumentStatus @default(PENDING)
-  expiryDate  DateTime?
-  verificationComments String?
-  verifiedAt  DateTime?
-  customerId  String
-  customer    Customer       @relation(fields: [customerId], references: [id])
-  loanId      String?
-  loan        Loan?          @relation(fields: [loanId], references: [id])
-  uploadedBy  String
-  uploadedByUser User        @relation(fields: [uploadedBy], references: [id])
-  verifiedBy  String?
-  verifiedByUser User?       @relation("DocumentVerification", fields: [verifiedBy], references: [id])
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-}
-
-model Communication {
-  id          String   @id @default(cuid())
-  type        String   // SMS, EMAIL, WHATSAPP
-  recipient   String
-  subject     String?
-  content     String
-  status      String   // SENT, FAILED, PENDING
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
