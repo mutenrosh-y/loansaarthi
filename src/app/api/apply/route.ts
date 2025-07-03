@@ -34,7 +34,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Validation failed', details: result.error.errors }, { status: 400 })
     }
     // Store in DB (LoanInquiry model)
-    const inquiry = await prisma.loanInquiry.create({ data: result.data })
+    const { loanAmount, monthlyIncome, ...rest } = result.data
+    const inquiry = await prisma.loanInquiry.create({
+      data: {
+        ...rest,
+        loanAmount: Number(loanAmount),
+        monthlyIncome: Number(monthlyIncome),
+      }
+    })
     return NextResponse.json({ success: true, inquiry })
   } catch (e) {
     return NextResponse.json({ error: 'Server error', details: e instanceof Error ? e.message : e }, { status: 500 })
