@@ -157,6 +157,8 @@ model LoanInquiry {
   state          String
   pincode        String
   otpVerified    Boolean
+  status         String   @default("New")
+  notes          String?
   createdAt      DateTime @default(now())
 }
 
