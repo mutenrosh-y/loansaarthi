@@ -61,9 +61,21 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const STATUS_OPTIONS = [
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'REJECTED', label: 'Rejected' },
+    { value: 'ACTIVE', label: 'Active' },
+    { value: 'CLOSED', label: 'Closed' },
+  ]
+  const [status, setStatus] = useState(loan?.status || '')
+  const [statusSaving, setStatusSaving] = useState(false)
+  const [statusError, setStatusError] = useState('')
+
   useEffect(() => {
     fetchLoanDetails();
-  }, [params.id]);
+    if (loan) setStatus(loan.status);
+  }, [params.id, loan]);
 
   const fetchLoanDetails = async () => {
     try {
@@ -127,6 +139,30 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
       setIsSubmitting(false);
     }
   };
+
+  const handleStatusSave = async () => {
+    if (!loan) return
+    setStatusSaving(true)
+    setStatusError('')
+    try {
+      const res = await fetch(`/api/loans/${loan.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to update status')
+      }
+      const updated = await res.json()
+      setLoan(updated)
+      setStatus(updated.status)
+    } catch (e: any) {
+      setStatusError(e.message)
+    } finally {
+      setStatusSaving(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -255,7 +291,32 @@ export default function LoanDetailsPage({ params }: { params: { id: string } }) 
                 </div>
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{loan.status}</dd>
+                  <dd className="mt-1 text-sm text-gray-900 flex items-center gap-2">
+                    {loan && (
+                      <>
+                        <select
+                          className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          value={status}
+                          onChange={e => setStatus(e.target.value)}
+                          disabled={loan.status === 'REJECTED' || statusSaving}
+                        >
+                          {STATUS_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        {status !== loan.status && (
+                          <button
+                            onClick={handleStatusSave}
+                            className="ml-2 px-2 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                            disabled={statusSaving || !loan}
+                          >
+                            {statusSaving ? 'Saving...' : 'Save'}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </dd>
+                  {statusError && <div className="text-xs text-red-600 mt-1">{statusError}</div>}
                 </div>
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500">Type</dt>

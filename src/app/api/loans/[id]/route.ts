@@ -143,4 +143,50 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+// PATCH /api/loans/[id] - Update loan status
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  try {
+    const { status, comments, disbursedDate } = await request.json()
+    if (!status) {
+      return NextResponse.json({ error: 'Missing status' }, { status: 400 })
+    }
+    // Validate allowed status values
+    const allowed = ['PENDING', 'APPROVED', 'REJECTED', 'ACTIVE', 'CLOSED']
+    if (!allowed.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+    // Optionally: Add logic to restrict invalid transitions
+    // e.g., can't go from REJECTED to ACTIVE, etc.
+    const loan = await prisma.loan.findUnique({ where: { id: params.id } })
+    if (!loan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 })
+    }
+    // Example: Disallow REJECTED/APPROVED to ACTIVE unless previously APPROVED
+    if (loan.status === 'REJECTED' && status !== 'REJECTED') {
+      return NextResponse.json({ error: 'Cannot change status from REJECTED' }, { status: 400 })
+    }
+    // Update status and optionally comments/disbursedDate
+    const updatedLoan = await prisma.loan.update({
+      where: { id: params.id },
+      data: {
+        status,
+        approvalComments: comments ?? loan.approvalComments,
+        disbursedDate: disbursedDate ?? loan.disbursedDate,
+        updatedAt: new Date(),
+      },
+    })
+    return NextResponse.json(updatedLoan)
+  } catch (error) {
+    console.error('Error updating loan status:', error)
+    return NextResponse.json({ error: 'Failed to update loan status' }, { status: 500 })
+  }
 } 
