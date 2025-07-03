@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -16,7 +16,15 @@ interface User {
   email: string;
 }
 
-export default function AddCustomerPage() {
+export default function AddCustomerPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddCustomerPage />
+    </Suspense>
+  )
+}
+
+function AddCustomerPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [branches, setBranches] = useState<Branch[]>([]);

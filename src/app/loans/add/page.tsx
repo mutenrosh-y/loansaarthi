@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/AppLayout';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -11,7 +11,15 @@ interface Customer {
   email: string;
 }
 
-export default function AddLoanPage() {
+export default function AddLoanPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddLoanPage />
+    </Suspense>
+  )
+}
+
+function AddLoanPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
