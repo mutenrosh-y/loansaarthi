@@ -23,6 +23,10 @@ model User {
   loans             Loan[]
   Notification      Notification[]
   branch            Branch?        @relation(fields: [branchId], references: [id])
+  notifyEmail       Boolean        @default(true)
+  notifySMS         Boolean        @default(false)
+  theme             String         @default("system")
+  language          String         @default("en")
 }
 
 model Branch {

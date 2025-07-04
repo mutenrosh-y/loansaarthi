@@ -19,14 +19,6 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Enable experimental features for better performance
-  experimental: {
-    // Enable React Server Components
-    serverActions: true,
-    // Enable optimized route groups
-    optimizeRoutes: true,
-  },
-  
   // Cache build output
   output: 'standalone',
   

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useSession } from 'next-auth/react';
 import {
@@ -25,8 +25,6 @@ export default function SettingsPage() {
     { id: 'permissions', name: 'Permissions', icon: UserGroupIcon },
     { id: 'notifications', name: 'Notifications', icon: BellIcon },
     { id: 'system', name: 'System', icon: WrenchScrewdriverIcon },
-    { id: 'branch', name: 'Branch', icon: BuildingOfficeIcon },
-    { id: 'terms', name: 'Terms & Policies', icon: DocumentTextIcon },
   ];
   
   return (
@@ -73,64 +71,9 @@ export default function SettingsPage() {
                           <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
                             <UserCircleIcon className="h-24 w-24" />
                           </div>
-                          <button className="mt-2 w-full text-sm font-medium text-blue-600 hover:text-blue-500">
-                            Change Avatar
-                          </button>
                         </div>
                         <div className="flex-1">
-                          <form className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label htmlFor="firstName" className="form-label">First Name</label>
-                                <input 
-                                  type="text" 
-                                  id="firstName" 
-                                  className="form-input" 
-                                  defaultValue={session?.user?.name?.split(' ')[0] || ''}
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="lastName" className="form-label">Last Name</label>
-                                <input 
-                                  type="text" 
-                                  id="lastName" 
-                                  className="form-input" 
-                                  defaultValue={session?.user?.name?.split(' ')[1] || ''}
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label htmlFor="email" className="form-label">Email Address</label>
-                              <input 
-                                type="email" 
-                                id="email" 
-                                className="form-input" 
-                                defaultValue={session?.user?.email || ''}
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="position" className="form-label">Position</label>
-                              <input 
-                                type="text" 
-                                id="position" 
-                                className="form-input" 
-                                placeholder="e.g. Branch Manager"
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="bio" className="form-label">Bio</label>
-                              <textarea 
-                                id="bio" 
-                                rows={3} 
-                                className="form-input" 
-                                placeholder="Brief description about yourself"
-                              />
-                            </div>
-                            <div className="flex justify-end">
-                              <button type="button" className="btn-secondary mr-3">Cancel</button>
-                              <button type="submit" className="btn-primary">Save Changes</button>
-                            </div>
-                          </form>
+                          <ProfileForm session={session} />
                         </div>
                       </div>
                     </div>
@@ -142,25 +85,7 @@ export default function SettingsPage() {
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Security Settings</h2>
                     <div className="bg-white shadow rounded-lg p-6">
                       <h3 className="text-md font-medium text-gray-900 mb-3">Change Password</h3>
-                      <form className="space-y-4">
-                        <div>
-                          <label htmlFor="currentPassword" className="form-label">Current Password</label>
-                          <input type="password" id="currentPassword" className="form-input" />
-                        </div>
-                        <div>
-                          <label htmlFor="newPassword" className="form-label">New Password</label>
-                          <input type="password" id="newPassword" className="form-input" />
-                        </div>
-                        <div>
-                          <label htmlFor="confirmPassword" className="form-label">Confirm New Password</label>
-                          <input type="password" id="confirmPassword" className="form-input" />
-                        </div>
-                        <div className="flex justify-end">
-                          <button type="button" className="btn-secondary mr-3">Cancel</button>
-                          <button type="submit" className="btn-primary">Update Password</button>
-                        </div>
-                      </form>
-                      
+                      <PasswordChangeForm />
                       <div className="mt-8 pt-6 border-t border-gray-200">
                         <h3 className="text-md font-medium text-gray-900 mb-3">Two-Factor Authentication</h3>
                         <div className="flex justify-between items-center">
@@ -170,7 +95,7 @@ export default function SettingsPage() {
                             </p>
                           </div>
                           <div className="ml-3">
-                            <button className="btn-secondary">Enable 2FA</button>
+                            <button className="btn-secondary" disabled>Enable 2FA (Coming Soon)</button>
                           </div>
                         </div>
                       </div>
@@ -182,64 +107,30 @@ export default function SettingsPage() {
                   <div>
                     <h2 className="text-lg font-medium text-gray-900 mb-4">User Permissions</h2>
                     <div className="bg-white shadow rounded-lg p-6">
-                      <p className="text-sm text-gray-500 mb-4">
-                        Configure access controls and permissions for various user roles in the system.
-                      </p>
-                      
-                      <div className="space-y-4">
-                        <div className="border rounded-md">
-                          <div className="bg-gray-50 px-4 py-3 border-b">
-                            <h3 className="text-md font-medium text-gray-900">Admin Role</h3>
-                          </div>
-                          <div className="p-4">
-                            <p className="text-sm text-gray-500 mb-2">
-                              Administrators have full access to all system features.
-                            </p>
-                            <button className="text-sm text-blue-600 hover:text-blue-500">Edit permissions</button>
-                          </div>
-                        </div>
-                        
-                        <div className="border rounded-md">
-                          <div className="bg-gray-50 px-4 py-3 border-b">
-                            <h3 className="text-md font-medium text-gray-900">Branch Manager Role</h3>
-                          </div>
-                          <div className="p-4">
-                            <p className="text-sm text-gray-500 mb-2">
-                              Branch managers have access to branch-specific data and operations.
-                            </p>
-                            <button className="text-sm text-blue-600 hover:text-blue-500">Edit permissions</button>
-                          </div>
-                        </div>
-                        
-                        <div className="border rounded-md">
-                          <div className="bg-gray-50 px-4 py-3 border-b">
-                            <h3 className="text-md font-medium text-gray-900">Loan Officer Role</h3>
-                          </div>
-                          <div className="p-4">
-                            <p className="text-sm text-gray-500 mb-2">
-                              Loan officers can manage loan applications and basic customer data.
-                            </p>
-                            <button className="text-sm text-blue-600 hover:text-blue-500">Edit permissions</button>
-                          </div>
-                        </div>
-                        
-                        <div className="border rounded-md">
-                          <div className="bg-gray-50 px-4 py-3 border-b">
-                            <h3 className="text-md font-medium text-gray-900">Customer Service Role</h3>
-                          </div>
-                          <div className="p-4">
-                            <p className="text-sm text-gray-500 mb-2">
-                              Customer service representatives can view customer data and handle inquiries.
-                            </p>
-                            <button className="text-sm text-blue-600 hover:text-blue-500">Edit permissions</button>
-                          </div>
-                        </div>
-                      </div>
+                      <PermissionsManager />
                     </div>
                   </div>
                 )}
                 
-                {(activeTab !== 'profile' && activeTab !== 'security' && activeTab !== 'permissions') && (
+                {activeTab === 'notifications' && (
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Notification Preferences</h2>
+                    <div className="bg-white shadow rounded-lg p-6">
+                      <NotificationPreferencesForm session={session} />
+                    </div>
+                  </div>
+                )}
+                
+                {activeTab === 'system' && (
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">System Settings</h2>
+                    <div className="bg-white shadow rounded-lg p-6">
+                      <SystemSettingsForm session={session} />
+                    </div>
+                  </div>
+                )}
+                
+                {(activeTab !== 'profile' && activeTab !== 'security' && activeTab !== 'permissions' && activeTab !== 'notifications' && activeTab !== 'system') && (
                   <div className="flex items-center justify-center h-64">
                     <div className="text-center">
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -258,4 +149,452 @@ export default function SettingsPage() {
       </div>
     </AppLayout>
   );
+}
+
+function ProfileForm({ session }: { session: any }) {
+  const [form, setForm] = useState({
+    name: session?.user?.name || '',
+    email: session?.user?.email || '',
+    branchId: session?.user?.branchId || '',
+  })
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  useEffect(() => {
+    fetchBranches()
+  }, [])
+
+  async function fetchBranches() {
+    try {
+      const res = await fetch('/api/branches')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch branches')
+      setBranches(data)
+    } catch (err: any) {
+      setError(err.message)
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target
+    setForm(f => ({ ...f, [name]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('Name and email are required')
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, email: form.email, branchId: form.branchId })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update profile')
+      setSuccess('Profile updated successfully')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {success && <div className="text-green-600 text-sm">{success}</div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="name" className="form-label">Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            className="form-input"
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="form-label">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            className="form-input"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="branchId" className="form-label">Branch</label>
+          <select
+            id="branchId"
+            name="branchId"
+            className="form-input"
+            value={form.branchId}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select a branch</option>
+            {branches.map(branch => (
+              <option key={branch.id} value={branch.id}>{branch.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <button type="submit" className="btn-primary" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function PasswordChangeForm() {
+  const [form, setForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target
+    setForm(f => ({ ...f, [name]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
+      setError('All fields are required')
+      return
+    }
+    if (form.newPassword.length < 6) {
+      setError('New password must be at least 6 characters')
+      return
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      setError('New passwords do not match')
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/users/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: form.currentPassword, newPassword: form.newPassword })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to change password')
+      setSuccess('Password updated successfully')
+      setForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {success && <div className="text-green-600 text-sm">{success}</div>}
+      <div>
+        <label htmlFor="currentPassword" className="form-label">Current Password</label>
+        <input
+          type="password"
+          id="currentPassword"
+          name="currentPassword"
+          className="form-input"
+          value={form.currentPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="newPassword" className="form-label">New Password</label>
+        <input
+          type="password"
+          id="newPassword"
+          name="newPassword"
+          className="form-input"
+          value={form.newPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="confirmPassword" className="form-label">Confirm New Password</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          className="form-input"
+          value={form.confirmPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      <div className="flex justify-end">
+        <button type="submit" className="btn-primary" disabled={isLoading}>
+          {isLoading ? 'Updating...' : 'Update Password'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function PermissionsManager() {
+  const { data: session } = useSession()
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [updating, setUpdating] = useState<string | null>(null)
+  const roles = ['ADMIN', 'BRANCH_MANAGER', 'LOAN_OFFICER', 'CUSTOMER_SERVICE']
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  async function fetchUsers() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/users')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch users')
+      setUsers(data)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleRoleChange(userId: string, newRole: string) {
+    setUpdating(userId)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await fetch('/api/users/role', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newRole })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update role')
+      setSuccess(`Role updated for ${data.name}`)
+      setUsers(users => users.map(u => u.id === userId ? { ...u, role: newRole } : u))
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setUpdating(null)
+    }
+  }
+
+  if (!session?.user?.role || session.user.role !== 'ADMIN') {
+    return <div className="text-sm text-gray-500">Only admins can manage user permissions.</div>
+  }
+
+  if (loading) return <div>Loading users...</div>
+  if (error) return <div className="text-red-600 text-sm">{error}</div>
+
+  return (
+    <div>
+      {success && <div className="text-green-600 text-sm mb-2">{success}</div>}
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr>
+            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {users.map(user => (
+            <tr key={user.id}>
+              <td className="px-4 py-2 whitespace-nowrap">{user.name}</td>
+              <td className="px-4 py-2 whitespace-nowrap">{user.email}</td>
+              <td className="px-4 py-2 whitespace-nowrap">
+                <select
+                  value={user.role}
+                  onChange={e => handleRoleChange(user.id, e.target.value)}
+                  disabled={updating === user.id}
+                  className="form-input"
+                >
+                  {roles.map(role => (
+                    <option key={role} value={role}>{role.replace('_', ' ')}</option>
+                  ))}
+                </select>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function NotificationPreferencesForm({ session }: { session: any }) {
+  const [form, setForm] = useState({
+    notifyEmail: session?.user?.notifyEmail ?? true,
+    notifySMS: session?.user?.notifySMS ?? false,
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, checked } = e.target
+    setForm(f => ({ ...f, [name]: checked }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update preferences')
+      setSuccess('Preferences updated successfully')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {success && <div className="text-green-600 text-sm">{success}</div>}
+      <div className="flex items-center space-x-4">
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="notifyEmail"
+            checked={form.notifyEmail}
+            onChange={handleChange}
+            className="form-checkbox"
+          />
+          <span>Email Notifications</span>
+        </label>
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="notifySMS"
+            checked={form.notifySMS}
+            onChange={handleChange}
+            className="form-checkbox"
+          />
+          <span>SMS Notifications</span>
+        </label>
+      </div>
+      <div className="flex justify-end">
+        <button type="submit" className="btn-primary" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Preferences'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function SystemSettingsForm({ session }: { session: any }) {
+  const [form, setForm] = useState({
+    theme: session?.user?.theme ?? 'system',
+    language: session?.user?.language ?? 'en',
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const { name, value } = e.target
+    setForm(f => ({ ...f, [name]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update system settings')
+      setSuccess('System settings updated successfully')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {success && <div className="text-green-600 text-sm">{success}</div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="theme" className="form-label">Theme</label>
+          <select
+            id="theme"
+            name="theme"
+            className="form-input"
+            value={form.theme}
+            onChange={handleChange}
+          >
+            <option value="system">System Default</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="language" className="form-label">Language</label>
+          <select
+            id="language"
+            name="language"
+            className="form-input"
+            value={form.language}
+            onChange={handleChange}
+          >
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+          </select>
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <button type="submit" className="btn-primary" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Settings'}
+        </button>
+      </div>
+    </form>
+  )
 } 
